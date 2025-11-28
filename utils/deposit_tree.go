@@ -13,7 +13,8 @@ import (
 const DepositContractTreeDepth = 32
 
 // MaxDepositCount is the maximum number of deposits that can be stored.
-const MaxDepositCount = (1 << DepositContractTreeDepth) - 1
+// Uses explicit uint64 type to avoid potential overflow issues.
+const MaxDepositCount uint64 = (1 << DepositContractTreeDepth) - 1
 
 // ErrMerkleTreeFull is returned when the Merkle tree is at maximum capacity.
 var ErrMerkleTreeFull = errors.New("merkle tree full")
@@ -97,7 +98,7 @@ func (dt *DepositTree) Deposit(depositDataRoot [32]byte) error {
 	}
 
 	// This should be unreachable if the algorithm is correct
-	return errors.New("deposit: unreachable code")
+	return errors.New("internal error: deposit algorithm reached unexpected state - loop did not terminate with branch update")
 }
 
 // GetDepositRoot returns the current deposit root hash.
@@ -180,7 +181,9 @@ func (dt *DepositTree) GetBranch() [DepositContractTreeDepth][32]byte {
 	defer dt.mu.RUnlock()
 
 	var result [DepositContractTreeDepth][32]byte
-	copy(result[:], dt.branch[:])
+	for i := range dt.branch {
+		result[i] = dt.branch[i]
+	}
 	return result
 }
 
@@ -191,7 +194,9 @@ func (dt *DepositTree) GetZeroHashes() [DepositContractTreeDepth][32]byte {
 	defer dt.mu.RUnlock()
 
 	var result [DepositContractTreeDepth][32]byte
-	copy(result[:], dt.zeroHashes[:])
+	for i := range dt.zeroHashes {
+		result[i] = dt.zeroHashes[i]
+	}
 	return result
 }
 
